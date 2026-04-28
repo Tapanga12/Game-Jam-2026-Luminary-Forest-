@@ -1,0 +1,1761 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Luminary Forest</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=IM+Fell+English:ital@0;1&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #0a0a0f;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    overflow: hidden;
+    font-family: 'IM Fell English', serif;
+    color: #e8d5a3;
+  }
+  #game-wrapper {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+  #title-screen, #game-over-screen {
+    position: absolute;
+    inset: 0;
+    background: #0a0a0f;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    gap: 20px;
+    padding: 40px;
+    text-align: center;
+  }
+  #title-screen h1 {
+    font-family: 'Cinzel', serif;
+    font-size: 3rem;
+    color: #f5c842;
+    text-shadow: 0 0 40px #f5c842cc, 0 0 80px #f5c84266, 0 0 120px #f5c84233;
+    letter-spacing: 4px;
+    animation: flicker 2.5s infinite;
+  }
+  @keyframes flicker {
+    0%   { opacity:1;    text-shadow: 0 0 40px #f5c842cc, 0 0 80px #f5c84266; }
+    18%  { opacity:1;    text-shadow: 0 0 40px #f5c842cc, 0 0 80px #f5c84266; }
+    19%  { opacity:0.12; text-shadow: 0 0 4px  #f5c84211; }
+    20%  { opacity:1;    text-shadow: 0 0 40px #f5c842cc, 0 0 80px #f5c84266; }
+    21%  { opacity:0.45; text-shadow: 0 0 10px #f5c84233; }
+    22%  { opacity:1;    text-shadow: 0 0 40px #f5c842cc, 0 0 80px #f5c84266; }
+    60%  { opacity:1;    text-shadow: 0 0 40px #f5c842cc, 0 0 80px #f5c84266; }
+    61%  { opacity:0.05; text-shadow: none; }
+    62%  { opacity:0.85; text-shadow: 0 0 18px #f5c84277; }
+    63%  { opacity:0.18; text-shadow: none; }
+    64%  { opacity:1;    text-shadow: 0 0 40px #f5c842cc, 0 0 80px #f5c84266; }
+    85%  { opacity:1;    text-shadow: 0 0 40px #f5c842cc, 0 0 80px #f5c84266; }
+    86%  { opacity:0.55; text-shadow: 0 0 8px  #f5c84233; }
+    87%  { opacity:1;    text-shadow: 0 0 40px #f5c842cc, 0 0 80px #f5c84266; }
+    100% { opacity:1;    text-shadow: 0 0 40px #f5c842cc, 0 0 80px #f5c84266; }
+  }
+  #title-screen p {
+    font-size: 1.1rem;
+    color: #b8a87a;
+    max-width: 420px;
+    line-height: 1.8;
+  }
+  #char-reveal {
+    font-size: 3.5rem;
+    animation: popIn 0.4s ease-out;
+  }
+  @keyframes popIn {
+    0%   { transform: scale(0.3); opacity: 0; }
+    70%  { transform: scale(1.2); }
+    100% { transform: scale(1);   opacity: 1; }
+  }
+  #char-label {
+    font-family: 'Cinzel', serif;
+    font-size: 0.85rem;
+    color: #7a6a4a;
+    letter-spacing: 2px;
+  }
+  .start-btn {
+    margin-top: 10px;
+    padding: 14px 40px;
+    background: transparent;
+    border: 2px solid #f5c842;
+    color: #f5c842;
+    font-family: 'Cinzel', serif;
+    font-size: 1rem;
+    letter-spacing: 3px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: uppercase;
+  }
+  .start-btn:hover {
+    background: #f5c84222;
+    box-shadow: 0 0 30px #f5c84244;
+  }
+  canvas {
+    display: block;
+    border: 1px solid #2a2010;
+    box-shadow: 0 0 60px #00000088;
+  }
+  #hud {
+    width: 640px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.9rem;
+    color: #b8a87a;
+    padding: 4px 8px;
+  }
+  #hud .artifact-count {
+    color: #f5c842;
+    font-family: 'Cinzel', serif;
+    font-size: 1rem;
+  }
+  #controls { font-size: 0.75rem; color: #4a3f2a; }
+  #game-over-screen h2 {
+    font-family: 'Cinzel', serif;
+    font-size: 2rem;
+    color: #f5c842;
+    letter-spacing: 3px;
+  }
+  #game-over-screen p { color: #b8a87a; line-height: 1.8; max-width: 380px; }
+
+  .ability-btn {
+    position: absolute;
+    padding: 8px 16px;
+    background: rgba(10,8,5,0.85);
+    border: 1.5px solid #7a5a2a;
+    color: #c8a860;
+    font-family: 'Cinzel', serif;
+    font-size: 0.75rem;
+    letter-spacing: 2px;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.2s;
+    z-index: 10;
+    user-select: none;
+  }
+  .ability-btn:hover   { border-color: #f5c842; color: #f5c842; background: rgba(20,15,5,0.92); }
+  .ability-btn.active  { border-color: #f5c842; color: #f5c842; box-shadow: 0 0 14px #f5c84255; }
+  .ability-btn.cooldown { border-color: #3a3020; color: #4a3f2a; cursor: default; }
+
+  #bright-btn { bottom: 86px; right: 14px; }
+  #sense-btn { bottom: 50px; right: 14px; }
+  #flash-btn { bottom: 14px; right: 14px; }
+</style>
+</head>
+<body>
+<div id="game-wrapper">
+  <div id="hud">
+    <span id="hud-title">LUMINARY FOREST</span>
+    <span class="artifact-count" id="artifact-display">Artifacts: 0 / 5</span>
+    <span id="controls">WASD/Arrows · Mouse aims · F=Sense · G=Flash · V=Full Bright</span>
+  </div>
+  <canvas id="canvas" width="640" height="480"></canvas>
+
+  <button id="bright-btn" class="ability-btn" style="display:none;">V — FULL BRIGHT: OFF</button>
+  <button id="sense-btn" class="ability-btn" style="display:none;">F — FOREST SENSE</button>
+  <button id="flash-btn" class="ability-btn" style="display:none;">G — FLASH  🔦🔦🔦</button>
+
+  <div id="title-screen">
+    <h1>LUMINARY FOREST</h1>
+    <p>The forest holds five ancient artifacts, lost in darkness.<br>
+    Your flashlight is all that stands between you and the unknown.<br>
+    Find them all, then seek the Wizard at the stone.</p>
+    <p style="font-style:italic; color:#7a6a4a; font-size:0.9rem;">Your wanderer has been chosen by the forest:</p>
+    <div id="char-reveal">🍄</div>
+    <div id="char-label">THE MUSHROOM</div>
+    <button class="start-btn" id="start-btn">Enter the Forest</button>
+    <button class="start-btn" id="chapter2-btn">Skip to Chapter 2 (=)</button>
+  </div>
+
+  <div id="game-over-screen" style="display:none;">
+    <h2 id="end-title">YOU HAVE BECOME A GHOST</h2>
+    <p id="end-msg">You drift among the trees now, a luminous spirit.<br>
+    Another wanderer may one day find what you could not.</p>
+    <button class="start-btn" id="restart-btn">Wander Again</button>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById('canvas');
+const ctx    = canvas.getContext('2d');
+const W = canvas.width, H = canvas.height;
+const WORLD_W = 1800, WORLD_H = 1600;
+const TILE = 40;
+
+let gameState = 'title';
+let camera    = { x:0, y:0 };
+let tick      = 0;
+
+// ---- Character roster ----
+const CHARACTERS = [
+  { key:'mushroom', emoji:'🍄', label:'THE MUSHROOM' },
+  { key:'orange',   emoji:'🍊', label:'THE ORANGE'   },
+  { key:'banana',   emoji:'🍌', label:'THE BANANA'   },
+  { key:'gnome',    emoji:'🧙', label:'THE GNOME'    },
+  { key:'fox',      emoji:'🦊', label:'THE FOX'      },
+  { key:'owl',      emoji:'🦉', label:'THE OWL'      },
+  { key:'frog',     emoji:'🐸', label:'THE FROG'     },
+  { key:'snail',    emoji:'🐌', label:'THE SNAIL'    },
+];
+const CHAR_EMOJIS = { ghost:'👻' };
+CHARACTERS.forEach(c => { CHAR_EMOJIS[c.key] = c.emoji; });
+
+const GHOST_STYLES = [
+  { id:'hunter',  detect:250, chase:1.24, wander:0.84, jitter:0.07 },
+  { id:'ambush',  detect:285, chase:1.14, wander:0.80, jitter:0.06 },
+  { id:'flanker', detect:270, chase:1.18, wander:0.82, jitter:0.07 },
+  { id:'stalker', detect:320, chase:1.06, wander:0.74, jitter:0.05 },
+  { id:'sentry',  detect:235, chase:1.20, wander:0.88, jitter:0.02 }
+];
+
+let selectedChar = 'mushroom';
+function pickRandomChar() {
+  const pick = CHARACTERS[Math.floor(Math.random() * CHARACTERS.length)];
+  selectedChar = pick.key;
+  document.getElementById('char-reveal').textContent = pick.emoji;
+  document.getElementById('char-label').textContent  = pick.label;
+}
+pickRandomChar();
+
+// ---- World state ----
+let trees = [], artifacts = [], ghosts = [], particles = [];
+let wizard = { x:1500, y:300, w:36, h:36 };
+let player = {};
+let dialogMsg = '', dialogTimer = 0;
+let ghostified = false, artifactsCollected = 0;
+const TOTAL_ARTIFACTS = 5;
+const GHOST_COUNT = 8;
+const GHOST_SPAWN_SPACING = 220;
+const GHOST_GLOBAL_AGGRO_DELAY = 180;
+
+// ---- Torch pickup & flash ability ----
+let torchPickup   = null;
+let torchCharges  = 0;
+let flashActive   = false;
+let flashTimer    = 0;
+let flashCooldown = 0;
+const FLASH_DURATION = 120;
+const FLASH_COOLDOWN = 300;
+
+// ---- Forest Sense ----
+let sensePath     = [];
+let senseTimer    = 0;
+let senseCooldown = 0;
+const SENSE_DURATION = 300;
+const SENSE_COOLDOWN = 420;
+
+const DARKNESS_MULT = 0.85; // ~15% brighter baseline darkness.
+let fullBrightMode = false;
+
+function canToggleBrightness() {
+  return gameState === 'playing' || gameState === 'chapter2-village' || gameState === 'chapter2-forest';
+}
+
+const senseBtn = document.getElementById('sense-btn');
+const flashBtn = document.getElementById('flash-btn');
+const brightBtn = document.getElementById('bright-btn');
+const hudTitle = document.getElementById('hud-title');
+const artifactDisplay = document.getElementById('artifact-display');
+
+// ---- Chapter 2 ----
+let chapter2Villagers = [];
+let chapter2Target = null;
+let chapter2Runner = null;
+let chapter2VictimArtifacts = 0;
+let chapter2Houses = [];
+const CHAPTER2_SPEED_MULT = 1.1;
+const CHAPTER2_REPATH_FRAMES = 20;
+const VILLAGER_EMOJIS = ['🧑', '👩', '👨', '🧒', '👵', '👴', '🧔', '🧕'];
+
+// ---- Seeded RNG ----
+function seededRand(seed) {
+  let s = seed;
+  return function() {
+    s = (s * 9301 + 49297) % 233280;
+    return s / 233280;
+  };
+}
+
+function makeRunSeed() {
+  if (window.crypto && window.crypto.getRandomValues) {
+    const buf = new Uint32Array(1);
+    window.crypto.getRandomValues(buf);
+    return buf[0] || Date.now();
+  }
+  return Date.now();
+}
+
+// One seed per page load: reloading the tab creates a different world.
+const RUN_SEED = makeRunSeed();
+
+// ---- Safe spawn: not inside a tree, at least minDist from (ox,oy) ----
+function isOpenFootprint(wx, wy, pad = 12) {
+  return (
+    !isTileBlocked(wx, wy) &&
+    !isTileBlocked(wx - pad, wy - pad) &&
+    !isTileBlocked(wx + pad, wy - pad) &&
+    !isTileBlocked(wx - pad, wy + pad) &&
+    !isTileBlocked(wx + pad, wy + pad)
+  );
+}
+
+function safeSpawnPos(rngFn, ox, oy, minDist) {
+  const margin = 80;
+  for (let attempt = 0; attempt < 500; attempt++) {
+    const wx = margin + rngFn() * (WORLD_W - margin * 2);
+    const wy = margin + rngFn() * (WORLD_H - margin * 2);
+    if (Math.hypot(wx - ox, wy - oy) < minDist) continue;
+    const tx = Math.floor(wx / TILE) * TILE + TILE / 2;
+    const ty = Math.floor(wy / TILE) * TILE + TILE / 2;
+    if (isOpenFootprint(tx, ty)) return { x: tx, y: ty };
+  }
+
+  // Fallback scan to guarantee a valid open tile, even in dense forests.
+  for (let y = TILE; y < WORLD_H - TILE; y += TILE) {
+    for (let x = TILE; x < WORLD_W - TILE; x += TILE) {
+      const tx = x + TILE / 2;
+      const ty = y + TILE / 2;
+      if (Math.hypot(tx - ox, ty - oy) < minDist) continue;
+      if (isOpenFootprint(tx, ty)) return { x: tx, y: ty };
+    }
+  }
+
+  for (let y = TILE; y < WORLD_H - TILE; y += TILE) {
+    for (let x = TILE; x < WORLD_W - TILE; x += TILE) {
+      const tx = x + TILE / 2;
+      const ty = y + TILE / 2;
+      if (isOpenFootprint(tx, ty)) return { x: tx, y: ty };
+    }
+  }
+
+  return { x: TILE * 2 + TILE / 2, y: TILE * 2 + TILE / 2 };
+}
+
+function generateArtifactPositions(rngFn, count, avoidX, avoidY) {
+  const positions = [];
+  const margin = 80;
+  const isValidArtifactSpot = (tx, ty, spacing = 210) => {
+    if (Math.hypot(tx - avoidX, ty - avoidY) < 260) return false;
+    if (Math.hypot(tx - wizard.x, ty - wizard.y) < 170) return false;
+    if (positions.some(p => Math.hypot(tx - p.x, ty - p.y) < spacing)) return false;
+    if (!isOpenFootprint(tx, ty)) return false;
+    return true;
+  };
+
+  for (let attempt = 0; attempt < 2500 && positions.length < count; attempt++) {
+    const wx = margin + rngFn() * (WORLD_W - margin * 2);
+    const wy = margin + rngFn() * (WORLD_H - margin * 2);
+    const tx = Math.floor(wx / TILE) * TILE + TILE / 2;
+    const ty = Math.floor(wy / TILE) * TILE + TILE / 2;
+    if (!isValidArtifactSpot(tx, ty, 210)) continue;
+    positions.push({ x: tx, y: ty });
+  }
+
+  while (positions.length < count) {
+    const fallback = safeSpawnPos(rngFn, avoidX, avoidY, 220);
+    if (!isValidArtifactSpot(fallback.x, fallback.y, 150)) break;
+    positions.push({ x: fallback.x, y: fallback.y });
+  }
+
+  const backupSpots = [
+    { x: 260, y: 260 }, { x: 620, y: 260 }, { x: 980, y: 260 }, { x: 1340, y: 260 },
+    { x: 260, y: 620 }, { x: 620, y: 620 }, { x: 980, y: 620 }, { x: 1340, y: 620 },
+    { x: 260, y: 980 }, { x: 620, y: 980 }, { x: 980, y: 980 }, { x: 1340, y: 980 },
+    { x: 260, y: 1340 }, { x: 620, y: 1340 }, { x: 980, y: 1340 }, { x: 1340, y: 1340 }
+  ];
+  for (const spot of backupSpots) {
+    if (positions.length >= count) break;
+    if (!isValidArtifactSpot(spot.x, spot.y, 140)) continue;
+    positions.push({ x: spot.x, y: spot.y });
+  }
+
+  for (let attempt = 0; attempt < 3000 && positions.length < count; attempt++) {
+    const wx = margin + rngFn() * (WORLD_W - margin * 2);
+    const wy = margin + rngFn() * (WORLD_H - margin * 2);
+    const tx = Math.floor(wx / TILE) * TILE + TILE / 2;
+    const ty = Math.floor(wy / TILE) * TILE + TILE / 2;
+    if (!isValidArtifactSpot(tx, ty, 100)) continue;
+    positions.push({ x: tx, y: ty });
+  }
+
+  return positions.slice(0, count);
+}
+
+function initWorld() {
+  const rng = seededRand(RUN_SEED);
+  trees = [];
+
+  for (let x = 0; x < WORLD_W; x += TILE) {
+    trees.push({ x, y:0 });
+    trees.push({ x, y:WORLD_H - TILE });
+  }
+  for (let y = TILE; y < WORLD_H - TILE; y += TILE) {
+    trees.push({ x:0, y });
+    trees.push({ x:WORLD_W - TILE, y });
+  }
+  for (let i = 0; i < 320; i++) {
+    const tx = Math.floor(rng() * (WORLD_W / TILE - 2) + 1) * TILE;
+    const ty = Math.floor(rng() * (WORLD_H / TILE - 2) + 1) * TILE;
+    if (tx > 1200 && ty < 600 && tx < 1700 && ty > 100) continue;
+    trees.push({ x:tx, y:ty });
+  }
+
+  // Build treeSet early so safeSpawnPos works
+  buildTreeSet();
+
+  const playerStart = safeSpawnPos(rng, wizard.x, wizard.y, 520);
+
+  const artPositions = generateArtifactPositions(rng, TOTAL_ARTIFACTS, playerStart.x, playerStart.y);
+  artifacts = artPositions.map((p, i) => ({
+    ...p, w:20, h:20, collected:false, glow:0, id:i
+  }));
+
+  ghosts = [];
+  let ghostAttempts = 0;
+  while (ghosts.length < GHOST_COUNT && ghostAttempts < 300) {
+    ghostAttempts++;
+    const gx = Math.floor(rng() * (WORLD_W - 200) + 100);
+    const gy = Math.floor(rng() * (WORLD_H - 200) + 100);
+    if (Math.hypot(gx - playerStart.x, gy - playerStart.y) < 350) continue;
+    if (ghosts.some(o => Math.hypot(gx - o.x, gy - o.y) < GHOST_SPAWN_SPACING)) continue;
+    ghosts.push({
+      x:gx, y:gy, w:28, h:28,
+      vx:(rng() - 0.5) * 1.2,
+      vy:(rng() - 0.5) * 1.2,
+      alpha: 0.6 + rng() * 0.3,
+      wobble: rng() * Math.PI * 2,
+      fleeing: 0,
+      style: ghosts.length % GHOST_STYLES.length,
+      flankSign: rng() < 0.5 ? -1 : 1,
+      burstTimer: 0,
+      burstCooldown: 0,
+      guardX: gx,
+      guardY: gy,
+      orbitAngle: rng() * Math.PI * 2,
+      orbitRadius: 55 + rng() * 35,
+      orbitSpeed: 0.028 + rng() * 0.02,
+      alertDelay: 60 + Math.floor(rng() * 120)
+    });
+  }
+
+  // Torch: seeded separately so it doesn't disturb tree/ghost RNG
+  const torchRng = seededRand(RUN_SEED ^ 777);
+  const tPos = safeSpawnPos(torchRng, playerStart.x, playerStart.y, 280);
+  torchPickup   = { x:tPos.x, y:tPos.y, glow:0, collected:false };
+  torchCharges  = 0;
+  flashActive   = false;
+  flashTimer    = 0;
+  flashCooldown = 0;
+
+  player = {
+    x:playerStart.x, y:playerStart.y, w:28, h:28,
+    vx:0, vy:0, speed:2.7,
+    char: selectedChar,
+    flashRadius: 190,
+    hp:3, invTimer:0
+  };
+
+  ghostified         = false;
+  artifactsCollected = 0;
+  dialogMsg          = '';
+  dialogTimer        = 0;
+  particles          = [];
+  camera             = { x:0, y:0 };
+  sensePath          = [];
+  senseTimer         = 0;
+  senseCooldown      = 0;
+  tick               = 0;
+
+  artifactDisplay.textContent = `Artifacts: ${artifactsCollected} / ${TOTAL_ARTIFACTS}`;
+  updateAbilityButtons();
+}
+
+function beginChapter2Village() {
+  initWorld();
+  gameState = 'chapter2-village';
+  hudTitle.textContent = 'CHAPTER 2: VILLAGE HUNT';
+  artifactDisplay.textContent = 'Find your next victim';
+  dialogMsg = 'As a ghost, enter the village and mark your next victim.';
+  dialogTimer = 260;
+  senseBtn.style.display = 'none';
+  flashBtn.style.display = 'none';
+  updateBrightnessButton();
+  camera = { x: 0, y: 0 };
+
+  const villageCenter = { x: 460, y: 520 };
+  const villageBounds = { minX: 220, maxX: 720, minY: 300, maxY: 740 };
+
+  player.x = villageCenter.x;
+  player.y = villageCenter.y;
+  player.w = 28;
+  player.h = 28;
+  player.char = 'ghost';
+  player.flashRadius = 165;
+  updateCamera();
+
+  chapter2Houses = [
+    { x: 300, y: 360, w: 88, h: 62 },
+    { x: 450, y: 340, w: 90, h: 64 },
+    { x: 610, y: 380, w: 86, h: 60 },
+    { x: 320, y: 560, w: 92, h: 64 },
+    { x: 520, y: 585, w: 94, h: 66 }
+  ];
+
+  chapter2Villagers = [];
+  for (let i = 0; i < 6; i++) {
+    chapter2Villagers.push({
+      x: villageBounds.minX + Math.random() * (villageBounds.maxX - villageBounds.minX),
+      y: villageBounds.minY + Math.random() * (villageBounds.maxY - villageBounds.minY),
+      vx: (Math.random() - 0.5) * 1.6,
+      vy: (Math.random() - 0.5) * 1.6,
+      w: 22,
+      h: 22,
+      emoji: VILLAGER_EMOJIS[i % VILLAGER_EMOJIS.length],
+      minX: villageBounds.minX,
+      maxX: villageBounds.maxX,
+      minY: villageBounds.minY,
+      maxY: villageBounds.maxY
+    });
+  }
+  chapter2Target = chapter2Villagers[Math.floor(Math.random() * chapter2Villagers.length)] || null;
+}
+
+function jumpToChapter2() {
+  document.getElementById('title-screen').style.display = 'none';
+  document.getElementById('game-over-screen').style.display = 'none';
+  beginChapter2Village();
+}
+
+function beginChapter2Forest() {
+  initWorld();
+  gameState = 'chapter2-forest';
+  hudTitle.textContent = 'CHAPTER 2: FOREST CHASE';
+  chapter2VictimArtifacts = 0;
+  artifactDisplay.textContent = `Victim Artifacts: ${chapter2VictimArtifacts} / ${TOTAL_ARTIFACTS}`;
+
+  ghostified = true;
+  player.char = 'ghost';
+  player.flashRadius = 140;
+  player.hp = 1;
+  ghosts = [];
+
+  artifacts.forEach(a => { a.collected = false; a.glow = 0; });
+  artifactsCollected = 0;
+
+  const victimRng = seededRand(RUN_SEED ^ 424242);
+  let spawn = safeSpawnPos(victimRng, player.x, player.y, 420);
+  let spawnAttempts = 0;
+  while (!isOpenFootprint(spawn.x, spawn.y) && spawnAttempts < 40) {
+    spawn = safeSpawnPos(victimRng, player.x, player.y, 220);
+    spawnAttempts++;
+  }
+  chapter2Runner = {
+    x: spawn.x,
+    y: spawn.y,
+    w: 24,
+    h: 24,
+    speed: 1.55,
+    emoji: chapter2Target?.emoji || VILLAGER_EMOJIS[Math.floor(Math.random() * VILLAGER_EMOJIS.length)],
+    vx: 0,
+    vy: 0,
+    path: [],
+    pathIndex: 0,
+    targetKey: '',
+    repathIn: 0,
+    stuckFrames: 0,
+    lastX: spawn.x,
+    lastY: spawn.y
+  };
+  dialogMsg = 'You found one. Hunt them before they collect the artifacts.';
+  dialogTimer = 240;
+  updateAbilityButtons();
+}
+
+function showChapter2End(ghostWon) {
+  senseBtn.style.display = 'none';
+  flashBtn.style.display = 'none';
+  brightBtn.style.display = 'none';
+  const screen = document.getElementById('game-over-screen');
+  const title = document.getElementById('end-title');
+  const msg = document.getElementById('end-msg');
+
+  if (ghostWon) {
+    title.textContent = 'CHAPTER 2 COMPLETE';
+    title.style.color = '#88aaff';
+    msg.innerHTML = `You struck before the victim could gather every relic.<br>
+    The forest accepts your hunt, and the night grows colder.<br><br>
+    <em style="color:#8ca4d9">A new chapter waits in the dark.</em>`;
+  } else {
+    title.textContent = 'THE VICTIM ESCAPED';
+    title.style.color = '#ffb366';
+    msg.innerHTML = `Your prey found all artifacts before your grasp closed in.<br>
+    Their offering weakens your hold over the woods.<br><br>
+    <em style="color:#b88a55">Hunt again, and do not hesitate.</em>`;
+  }
+  screen.style.display = 'flex';
+}
+
+function updateChapter2Village() {
+  tick++;
+  let dx = 0, dy = 0;
+  if (keys['ArrowLeft'] || keys['a'] || keys['A']) dx -= 1;
+  if (keys['ArrowRight'] || keys['d'] || keys['D']) dx += 1;
+  if (keys['ArrowUp'] || keys['w'] || keys['W']) dy -= 1;
+  if (keys['ArrowDown'] || keys['s'] || keys['S']) dy += 1;
+  if (dx !== 0 && dy !== 0) { dx *= 0.707; dy *= 0.707; }
+
+  const villageSpeed = 2.7;
+  if (dx !== 0) tryMove(player, dx * villageSpeed, 0);
+  if (dy !== 0) tryMove(player, 0, dy * villageSpeed);
+  player.x = Math.max(player.w / 2, Math.min(WORLD_W - player.w / 2, player.x));
+  player.y = Math.max(player.h / 2, Math.min(WORLD_H - player.h / 2, player.y));
+  updateCamera();
+
+  chapter2Villagers.forEach(v => {
+    v.x += v.vx;
+    v.y += v.vy;
+    if (v.x < v.minX || v.x > v.maxX) v.vx *= -1;
+    if (v.y < v.minY || v.y > v.maxY) v.vy *= -1;
+  });
+
+  if (chapter2Target && Math.hypot(player.x - chapter2Target.x, player.y - chapter2Target.y) < 24) {
+    spawnParticles(chapter2Target.x, chapter2Target.y, '#88aaff', 20);
+    beginChapter2Forest();
+    return;
+  }
+
+  if (dialogTimer > 0) dialogTimer--;
+}
+
+function updateChapter2Forest() {
+  tick++;
+
+  let dx = 0, dy = 0;
+  if (keys['ArrowLeft'] || keys['a'] || keys['A']) dx -= 1;
+  if (keys['ArrowRight'] || keys['d'] || keys['D']) dx += 1;
+  if (keys['ArrowUp'] || keys['w'] || keys['W']) dy -= 1;
+  if (keys['ArrowDown'] || keys['s'] || keys['S']) dy += 1;
+  if (dx !== 0 && dy !== 0) { dx *= 0.707; dy *= 0.707; }
+
+  const chaseSpeed = 2.35 * CHAPTER2_SPEED_MULT;
+  // As a ghost in chapter 2, you phase through trees.
+  player.x += dx * chaseSpeed;
+  player.y += dy * chaseSpeed;
+  player.x = Math.max(player.w / 2, Math.min(WORLD_W - player.w / 2, player.x));
+  player.y = Math.max(player.h / 2, Math.min(WORLD_H - player.h / 2, player.y));
+  updateCamera();
+
+  if (!chapter2Runner) return;
+
+  const remainingArtifacts = artifacts.filter(a => !a.collected);
+  let targetArtifact = null;
+
+  if (remainingArtifacts.length > 0) {
+    remainingArtifacts.sort((a, b) => {
+      const da = Math.hypot(chapter2Runner.x - a.x, chapter2Runner.y - a.y);
+      const db = Math.hypot(chapter2Runner.x - b.x, chapter2Runner.y - b.y);
+      return da - db;
+    });
+    targetArtifact = remainingArtifacts[0];
+
+    const ghostDistance = Math.hypot(player.x - chapter2Runner.x, player.y - chapter2Runner.y);
+    const nearGhost = ghostDistance < 120;
+    const panicGhost = ghostDistance < 135;
+    const movementTarget = panicGhost
+      ? findRunnerFleeTarget(chapter2Runner, player.x, player.y)
+      : targetArtifact;
+    const targetKey = panicGhost
+      ? `flee:${Math.floor(movementTarget.x / TILE)}:${Math.floor(movementTarget.y / TILE)}`
+      : `artifact:${targetArtifact.id}`;
+    const runnerSpeed =
+      (chapter2Runner.speed + chapter2VictimArtifacts * 0.06 + (nearGhost ? 0.18 : 0) + (panicGhost ? 0.18 : 0)) * CHAPTER2_SPEED_MULT;
+
+    const needsNewPath =
+      chapter2Runner.path.length === 0 ||
+      chapter2Runner.pathIndex >= chapter2Runner.path.length ||
+      chapter2Runner.targetKey !== targetKey ||
+      chapter2Runner.repathIn <= 0 ||
+      chapter2Runner.stuckFrames > 24;
+
+    if (needsNewPath) {
+      chapter2Runner.path = findPathPoints(chapter2Runner.x, chapter2Runner.y, movementTarget.x, movementTarget.y);
+      chapter2Runner.pathIndex = 0;
+      chapter2Runner.targetKey = targetKey;
+      chapter2Runner.repathIn = panicGhost ? 7 : CHAPTER2_REPATH_FRAMES;
+      if (chapter2Runner.stuckFrames > 24) chapter2Runner.stuckFrames = 0;
+    } else {
+      chapter2Runner.repathIn--;
+    }
+
+    const moved = moveRunnerAlongPath(chapter2Runner, movementTarget, runnerSpeed);
+    if (!moved) chapter2Runner.stuckFrames++;
+    else chapter2Runner.stuckFrames = Math.max(0, chapter2Runner.stuckFrames - 2);
+
+    // In panic range, survival takes priority over collecting relics.
+    if (!panicGhost) {
+      for (const artifact of artifacts) {
+        if (artifact.collected) continue;
+        if (Math.hypot(chapter2Runner.x - artifact.x, chapter2Runner.y - artifact.y) < 20) {
+          artifact.collected = true;
+          chapter2VictimArtifacts++;
+          artifactDisplay.textContent = `Victim Artifacts: ${chapter2VictimArtifacts} / ${TOTAL_ARTIFACTS}`;
+          spawnParticles(artifact.x, artifact.y, '#f5c842', 10);
+          if (chapter2VictimArtifacts >= TOTAL_ARTIFACTS) {
+            gameState = 'chapter2-lose';
+            showChapter2End(false);
+            return;
+          }
+          break;
+        }
+      }
+    }
+  }
+
+  if (Math.hypot(player.x - chapter2Runner.x, player.y - chapter2Runner.y) < 22) {
+    gameState = 'chapter2-win';
+    showChapter2End(true);
+    return;
+  }
+
+  if (dialogTimer > 0) dialogTimer--;
+
+  particles.forEach(p => {
+    p.x += p.vx; p.y += p.vy;
+    p.vy += 0.05;
+    p.life -= 0.025;
+    p.size *= 0.97;
+  });
+  particles = particles.filter(p => p.life > 0);
+}
+
+// ---- Tree collision ----
+let treeSet = new Set();
+function buildTreeSet() {
+  treeSet = new Set(trees.map(t => `${t.x},${t.y}`));
+}
+function isTileBlocked(wx, wy) {
+  const tx = Math.floor(wx / TILE) * TILE;
+  const ty = Math.floor(wy / TILE) * TILE;
+  return treeSet.has(`${tx},${ty}`);
+}
+function tryMove(obj, dx, dy) {
+  const nx = obj.x + dx, ny = obj.y + dy;
+  const hw = obj.w / 2 - 2, hh = obj.h / 2 - 2;
+  const corners = [
+    [nx - hw, ny - hh], [nx + hw, ny - hh],
+    [nx - hw, ny + hh], [nx + hw, ny + hh]
+  ];
+  if (!corners.some(([cx, cy]) => isTileBlocked(cx, cy))) {
+    obj.x = nx; obj.y = ny;
+  }
+}
+
+function tileCoord(value, maxTiles) {
+  return Math.max(1, Math.min(maxTiles - 2, Math.floor(value / TILE)));
+}
+
+function findPathPoints(fromX, fromY, toX, toY) {
+  const cols = Math.floor(WORLD_W / TILE);
+  const rows = Math.floor(WORLD_H / TILE);
+  const sx = tileCoord(fromX, cols), sy = tileCoord(fromY, rows);
+  const tx = tileCoord(toX, cols), ty = tileCoord(toY, rows);
+
+  const startKey = `${sx},${sy}`;
+  const targetKey = `${tx},${ty}`;
+  if (startKey === targetKey) return [{ x: toX, y: toY }];
+
+  const queue = [[sx, sy]];
+  const visited = new Set([startKey]);
+  const parent = new Map();
+  const dirs = [[1,0], [-1,0], [0,1], [0,-1], [1,1], [1,-1], [-1,1], [-1,-1]];
+
+  let found = false;
+  while (queue.length > 0) {
+    const [cx, cy] = queue.shift();
+    if (cx === tx && cy === ty) { found = true; break; }
+
+    for (const [dx, dy] of dirs) {
+      const nx = cx + dx;
+      const ny = cy + dy;
+      if (nx < 1 || ny < 1 || nx >= cols - 1 || ny >= rows - 1) continue;
+      if (isTileBlocked(nx * TILE + TILE / 2, ny * TILE + TILE / 2)) continue;
+      if (dx !== 0 && dy !== 0) {
+        if (isTileBlocked(cx * TILE + TILE / 2, ny * TILE + TILE / 2)) continue;
+        if (isTileBlocked(nx * TILE + TILE / 2, cy * TILE + TILE / 2)) continue;
+      }
+
+      const key = `${nx},${ny}`;
+      if (visited.has(key)) continue;
+      visited.add(key);
+      parent.set(key, `${cx},${cy}`);
+      queue.push([nx, ny]);
+    }
+  }
+
+  if (!found) return [{ x: toX, y: toY }];
+
+  const rev = [];
+  let cur = targetKey;
+  while (cur && cur !== startKey) {
+    const [cx, cy] = cur.split(',').map(Number);
+    rev.push({ x: cx * TILE + TILE / 2, y: cy * TILE + TILE / 2 });
+    cur = parent.get(cur);
+  }
+  rev.reverse();
+  rev.push({ x: toX, y: toY });
+  return rev;
+}
+
+function findRunnerFleeTarget(runner, ghostX, ghostY) {
+  const awayX = runner.x - ghostX;
+  const awayY = runner.y - ghostY;
+  const awayMag = Math.hypot(awayX, awayY) || 1;
+  const baseAngle = Math.atan2(awayY / awayMag, awayX / awayMag);
+  const angleOffsets = [0, Math.PI / 6, -Math.PI / 6, Math.PI / 3, -Math.PI / 3, Math.PI / 2, -Math.PI / 2, Math.PI];
+  const distances = [240, 300, 180, 340];
+
+  let best = null;
+  let bestScore = -Infinity;
+
+  for (const dist of distances) {
+    for (const offset of angleOffsets) {
+      const a = baseAngle + offset;
+      const tx = Math.max(24, Math.min(WORLD_W - 24, runner.x + Math.cos(a) * dist));
+      const ty = Math.max(24, Math.min(WORLD_H - 24, runner.y + Math.sin(a) * dist));
+      if (!isOpenFootprint(tx, ty, 10)) continue;
+
+      const fromGhost = Math.hypot(tx - ghostX, ty - ghostY);
+      const fromRunner = Math.hypot(tx - runner.x, ty - runner.y);
+      const score = fromGhost - fromRunner * 0.2;
+      if (score > bestScore) {
+        bestScore = score;
+        best = { x: tx, y: ty };
+      }
+    }
+  }
+
+  if (best) return best;
+
+  const fallbackX = Math.max(24, Math.min(WORLD_W - 24, runner.x + (awayX / awayMag) * 220));
+  const fallbackY = Math.max(24, Math.min(WORLD_H - 24, runner.y + (awayY / awayMag) * 220));
+  return { x: fallbackX, y: fallbackY };
+}
+
+function moveRunnerAlongPath(runner, targetPoint, speed) {
+  const beforeX = runner.x;
+  const beforeY = runner.y;
+
+  let wx = targetPoint.x;
+  let wy = targetPoint.y;
+  if (runner.path.length > 0 && runner.pathIndex < runner.path.length) {
+    wx = runner.path[runner.pathIndex].x;
+    wy = runner.path[runner.pathIndex].y;
+    if (Math.hypot(runner.x - wx, runner.y - wy) < 12) {
+      runner.pathIndex++;
+      if (runner.pathIndex < runner.path.length) {
+        wx = runner.path[runner.pathIndex].x;
+        wy = runner.path[runner.pathIndex].y;
+      }
+    }
+  }
+
+  const dx = wx - runner.x;
+  const dy = wy - runner.y;
+  const dist = Math.hypot(dx, dy) || 1;
+  const desiredVx = (dx / dist) * speed;
+  const desiredVy = (dy / dist) * speed;
+
+  runner.vx += (desiredVx - runner.vx) * 0.22;
+  runner.vy += (desiredVy - runner.vy) * 0.22;
+
+  const maxV = speed;
+  const vMag = Math.hypot(runner.vx, runner.vy);
+  if (vMag > maxV) {
+    runner.vx = (runner.vx / vMag) * maxV;
+    runner.vy = (runner.vy / vMag) * maxV;
+  }
+
+  if (runner.vx !== 0) tryMove(runner, runner.vx, 0);
+  if (runner.vy !== 0) tryMove(runner, 0, runner.vy);
+
+  const movedDist = Math.hypot(runner.x - beforeX, runner.y - beforeY);
+  if (movedDist < 0.05) {
+    const side = Math.random() < 0.5 ? -1 : 1;
+    const px = -runner.vy * side * 0.6;
+    const py =  runner.vx * side * 0.6;
+    if (px !== 0) tryMove(runner, px, 0);
+    if (py !== 0) tryMove(runner, 0, py);
+  }
+
+  runner.lastX = runner.x;
+  runner.lastY = runner.y;
+  return Math.hypot(runner.x - beforeX, runner.y - beforeY) > 0.05;
+}
+
+// ---- Input ----
+const keys = {};
+document.addEventListener('keydown', e => {
+  keys[e.key] = true;
+  if ((e.key === 'f' || e.key === 'F') && gameState === 'playing') activateSense();
+  if ((e.key === 'g' || e.key === 'G') && gameState === 'playing') activateFlash();
+  if (e.key === 'v' || e.key === 'V') toggleFullBright();
+  if (e.key === '=' || e.key === '+') jumpToChapter2();
+});
+document.addEventListener('keyup', e => { keys[e.key] = false; });
+
+let mouse = { x: W/2, y: H/2 };
+canvas.addEventListener('mousemove', e => {
+  const rect = canvas.getBoundingClientRect();
+  mouse.x = e.clientX - rect.left;
+  mouse.y = e.clientY - rect.top;
+});
+
+senseBtn.addEventListener('click', activateSense);
+flashBtn.addEventListener('click', activateFlash);
+brightBtn.addEventListener('click', toggleFullBright);
+
+// ---- Forest Sense ----
+function activateSense() {
+  if (senseTimer > 0 || senseCooldown > 0 || gameState !== 'playing') return;
+  buildSensePath();
+  senseTimer    = SENSE_DURATION;
+  senseCooldown = SENSE_COOLDOWN;
+}
+function buildSensePath() {
+  let nearest = null, nearDist = Infinity;
+  artifacts.forEach(a => {
+    if (a.collected) return;
+    const d = Math.hypot(player.x - a.x, player.y - a.y);
+    if (d < nearDist) { nearDist = d; nearest = a; }
+  });
+  sensePath = [];
+  if (!nearest) return;
+  for (let i = 0; i <= 40; i++) {
+    const t = i / 40;
+    sensePath.push({
+      x: player.x + (nearest.x - player.x) * t,
+      y: player.y + (nearest.y - player.y) * t,
+      phase: i * 0.3
+    });
+  }
+}
+
+// ---- Flash ability ----
+function activateFlash() {
+  if (torchCharges <= 0 || flashTimer > 0 || flashCooldown > 0 || gameState !== 'playing') return;
+  torchCharges--;
+  flashActive   = true;
+  flashTimer    = FLASH_DURATION;
+  flashCooldown = FLASH_COOLDOWN;
+  scareGhostsInCone();
+  spawnParticles(player.x, player.y, '#ffe080', 20);
+}
+function scareGhostsInCone() {
+  const px = player.x - camera.x, py = player.y - camera.y;
+  const aimAngle = Math.atan2(mouse.y - py, mouse.x - px);
+  const HALF_ARC = Math.PI / 12;
+  ghosts.forEach(g => {
+    const dx = g.x - player.x, dy = g.y - player.y;
+    const dist = Math.hypot(dx, dy);
+    if (dist > 360) return;
+    let diff = Math.atan2(dy, dx) - aimAngle;
+    while (diff >  Math.PI) diff -= Math.PI * 2;
+    while (diff < -Math.PI) diff += Math.PI * 2;
+    if (Math.abs(diff) > HALF_ARC) return;
+    g.vx = (dx / (dist || 1)) * 3.5;
+    g.vy = (dy / (dist || 1)) * 3.5;
+    g.fleeing = 180;
+  });
+}
+
+// ---- Particles ----
+function spawnParticles(x, y, color, count = 8) {
+  for (let i = 0; i < count; i++) {
+    const angle = (Math.PI * 2 * i) / count + Math.random() * 0.3;
+    particles.push({
+      x, y,
+      vx: Math.cos(angle) * (1 + Math.random() * 2),
+      vy: Math.sin(angle) * (1 + Math.random() * 2),
+      life:1, color, size:3 + Math.random() * 4
+    });
+  }
+}
+
+// ---- Camera ----
+function updateCamera() {
+  camera.x = Math.max(0, Math.min(WORLD_W - W, player.x - W / 2));
+  camera.y = Math.max(0, Math.min(WORLD_H - H, player.y - H / 2));
+}
+
+// ---- Ability button labels ----
+function updateAbilityButtons() {
+  if (gameState !== 'playing') {
+    senseBtn.style.display = 'none';
+    flashBtn.style.display = 'none';
+    updateBrightnessButton();
+    return;
+  }
+
+  updateBrightnessButton();
+
+  senseBtn.style.display = 'block';
+  if (senseTimer > 0) {
+    senseBtn.className = 'ability-btn active';
+    senseBtn.textContent = `SENSING… ${Math.ceil(senseTimer / 60)}s`;
+  } else if (senseCooldown > 0) {
+    senseBtn.className = 'ability-btn cooldown';
+    senseBtn.textContent = `F — FOREST SENSE  (${Math.ceil(senseCooldown / 60)}s)`;
+  } else {
+    senseBtn.className = 'ability-btn';
+    senseBtn.textContent = 'F — FOREST SENSE';
+  }
+
+  flashBtn.style.display = 'block';
+  const charges = '🔦'.repeat(Math.max(0, torchCharges));
+  if (!torchPickup?.collected) {
+    flashBtn.className = 'ability-btn cooldown';
+    flashBtn.textContent = 'G — FLASH  (find torch ↗)';
+  } else if (torchCharges <= 0) {
+    flashBtn.className = 'ability-btn cooldown';
+    flashBtn.textContent = 'G — FLASH  (no charges)';
+  } else if (flashTimer > 0) {
+    flashBtn.className = 'ability-btn active';
+    flashBtn.textContent = `FLASHING!  ${charges}`;
+  } else if (flashCooldown > 0) {
+    flashBtn.className = 'ability-btn cooldown';
+    flashBtn.textContent = `G — FLASH  (${Math.ceil(flashCooldown / 60)}s)  ${charges}`;
+  } else {
+    flashBtn.className = 'ability-btn';
+    flashBtn.textContent = `G — FLASH  ${charges}`;
+  }
+}
+
+function updateBrightnessButton() {
+  if (!canToggleBrightness()) {
+    brightBtn.style.display = 'none';
+    return;
+  }
+  brightBtn.style.display = 'block';
+  brightBtn.className = fullBrightMode ? 'ability-btn active' : 'ability-btn';
+  brightBtn.textContent = `V — FULL BRIGHT: ${fullBrightMode ? 'ON' : 'OFF'}`;
+}
+
+function toggleFullBright() {
+  if (!canToggleBrightness()) return;
+  fullBrightMode = !fullBrightMode;
+  updateBrightnessButton();
+}
+
+// ==================== UPDATE ====================
+function update() {
+  if (gameState === 'chapter2-village') {
+    updateChapter2Village();
+    return;
+  }
+  if (gameState === 'chapter2-forest') {
+    updateChapter2Forest();
+    return;
+  }
+  if (gameState !== 'playing') return;
+  tick++;
+
+  // Player movement
+  let dx = 0, dy = 0;
+  if (keys['ArrowLeft']  || keys['a'] || keys['A']) dx -= 1;
+  if (keys['ArrowRight'] || keys['d'] || keys['D']) dx += 1;
+  if (keys['ArrowUp']    || keys['w'] || keys['W']) dy -= 1;
+  if (keys['ArrowDown']  || keys['s'] || keys['S']) dy += 1;
+  if (dx !== 0 && dy !== 0) { dx *= 0.707; dy *= 0.707; }
+  const spd = ghostified ? 1.8 : player.speed;
+  player.vx = dx * spd;
+  player.vy = dy * spd;
+  if (dx !== 0) tryMove(player, dx * spd, 0);
+  if (dy !== 0) tryMove(player, 0, dy * spd);
+  player.x = Math.max(player.w/2, Math.min(WORLD_W - player.w/2, player.x));
+  player.y = Math.max(player.h/2, Math.min(WORLD_H - player.h/2, player.y));
+
+  // Ghost win-drift
+  if (ghostified) player.y -= 0.4;
+
+  updateCamera();
+
+  // Torch pickup check
+  if (torchPickup && !torchPickup.collected) {
+    torchPickup.glow = (torchPickup.glow + 0.06) % (Math.PI * 2);
+    if (Math.hypot(player.x - torchPickup.x, player.y - torchPickup.y) < 28) {
+      torchPickup.collected = true;
+      torchCharges = 3;
+      dialogMsg   = 'Ancient torch found! Press G to unleash a blinding flash — scares ghosts!';
+      dialogTimer = 200;
+      spawnParticles(torchPickup.x, torchPickup.y, '#ffe080', 18);
+    }
+  }
+
+  // Artifacts
+  artifacts.forEach(a => {
+    if (a.collected) return;
+    a.glow = (a.glow + 0.05) % (Math.PI * 2);
+    if (Math.hypot(player.x - a.x, player.y - a.y) < 24) {
+      a.collected = true;
+      artifactsCollected++;
+      if (senseTimer > 0) buildSensePath();
+      spawnParticles(a.x, a.y, '#f5c842', 12);
+      artifactDisplay.textContent = `Artifacts: ${artifactsCollected} / ${TOTAL_ARTIFACTS}`;
+    }
+  });
+
+  // Ghosts — style-driven chase AI; ghosts phase through trees
+  ghosts.forEach(g => {
+    const style = GHOST_STYLES[(Number.isInteger(g.style) ? g.style : 0) % GHOST_STYLES.length];
+    g.wobble += style.id === 'sentry' ? 0.07 : 0.04;
+    if (ghostified) return;
+    const dxp = player.x - g.x;
+    const dyp = player.y - g.y;
+    const dist = Math.hypot(dxp, dyp);
+    const aggroBoost = 1 + artifactsCollected * 0.035;
+
+    if (g.alertDelay > 0) g.alertDelay--;
+
+    if (g.fleeing > 0) {
+      g.fleeing--;
+      const angle = Math.atan2(g.y - player.y, g.x - player.x);
+      g.vx = Math.cos(angle) * 2.2;
+      g.vy = Math.sin(angle) * 2.2;
+    } else {
+      if (g.burstTimer > 0) g.burstTimer--;
+      if (g.burstCooldown > 0) g.burstCooldown--;
+
+      let targetX = player.x;
+      let targetY = player.y;
+      const pSpeed = Math.hypot(player.vx, player.vy);
+
+      if (style.id === 'ambush') {
+        const lead = 55 + Math.min(40, pSpeed * 14);
+        const ux = pSpeed > 0.01 ? player.vx / pSpeed : 0;
+        const uy = pSpeed > 0.01 ? player.vy / pSpeed : 0;
+        targetX = player.x + ux * lead;
+        targetY = player.y + uy * lead;
+      } else if (style.id === 'flanker') {
+        const nx = dist > 0.01 ? dxp / dist : 0;
+        const ny = dist > 0.01 ? dyp / dist : 0;
+        const side = 70;
+        targetX = player.x + (-ny * side * g.flankSign);
+        targetY = player.y + ( nx * side * g.flankSign);
+      } else if (style.id === 'stalker') {
+        if (dist < 130 && g.burstCooldown === 0 && g.burstTimer === 0) {
+          g.burstTimer = 30;
+          g.burstCooldown = 150;
+        }
+      }
+
+      const detectRadius = style.detect + artifactsCollected * 6;
+      const globalReady = tick > GHOST_GLOBAL_AGGRO_DELAY;
+      const emergencyDetect = dist < 95;
+      const canDetect = (globalReady || emergencyDetect) && g.alertDelay <= 0;
+      if (dist < detectRadius && canDetect) {
+        const ax = targetX - g.x;
+        const ay = targetY - g.y;
+        const aDist = Math.hypot(ax, ay) || 1;
+        let chaseSpeed = style.chase * aggroBoost;
+        if (style.id === 'stalker' && g.burstTimer > 0) chaseSpeed = 2.3 * aggroBoost;
+        g.vx = (ax / aDist) * chaseSpeed;
+        g.vy = (ay / aDist) * chaseSpeed;
+      } else {
+        if (style.id === 'sentry') {
+          g.orbitAngle += g.orbitSpeed;
+          const patrolX = g.guardX + Math.cos(g.orbitAngle) * g.orbitRadius;
+          const patrolY = g.guardY + Math.sin(g.orbitAngle) * g.orbitRadius;
+          const px = patrolX - g.x;
+          const py = patrolY - g.y;
+          const pDist = Math.hypot(px, py) || 1;
+          g.vx = (px / pDist) * style.wander;
+          g.vy = (py / pDist) * style.wander;
+        } else {
+          g.vx += (Math.random() - 0.5) * style.jitter;
+          g.vy += (Math.random() - 0.5) * style.jitter;
+          const maxWander = style.wander;
+          g.vx = Math.max(-maxWander, Math.min(maxWander, g.vx));
+          g.vy = Math.max(-maxWander, Math.min(maxWander, g.vy));
+        }
+      }
+    }
+
+    g.x += g.vx;
+    g.y += g.vy;
+    g.x = Math.max(40, Math.min(WORLD_W - 40, g.x));
+    g.y = Math.max(40, Math.min(WORLD_H - 40, g.y));
+
+    const hitDist = Math.hypot(player.x - g.x, player.y - g.y);
+    if (player.invTimer <= 0 && hitDist < 22) {
+      player.hp--;
+      player.invTimer = 90;
+      spawnParticles(player.x, player.y, '#ff4444', 10);
+      if (player.hp <= 0) { gameState = 'lose'; showEndScreen(false); }
+    }
+  });
+
+  if (player.invTimer > 0) player.invTimer--;
+
+  // Wizard
+  const wdist = Math.hypot(player.x - wizard.x, player.y - wizard.y);
+  if (wdist < 50) {
+    if (artifactsCollected >= TOTAL_ARTIFACTS) {
+      if (!ghostified) {
+        ghostified = true;
+        player.char = 'ghost';
+        player.flashRadius = 120;
+        dialogMsg   = 'You have found them all... Now you are one of us.';
+        dialogTimer = 240;
+        ghosts.push({ x:player.x+60, y:player.y, w:28, h:28,
+                      vx:0.5, vy:0.3, alpha:0.7, wobble:0, fleeing:0 });
+        setTimeout(() => { beginChapter2Village(); }, 3600);
+      }
+    } else if (dialogTimer <= 0) {
+      const rem = TOTAL_ARTIFACTS - artifactsCollected;
+      dialogMsg   = `You are missing ${rem} artifact${rem > 1 ? 's' : ''}. Return to the forest.`;
+      dialogTimer = 120;
+    }
+  }
+
+  if (dialogTimer > 0) dialogTimer--;
+
+  // Sense timers
+  if (senseTimer > 0) { senseTimer--; if (senseTimer === 0) sensePath = []; }
+  if (senseCooldown > 0 && senseTimer === 0) senseCooldown--;
+  if (senseTimer > 0) buildSensePath();
+
+  // Flash timers
+  if (flashTimer > 0) { flashTimer--; if (flashTimer === 0) flashActive = false; }
+  if (flashCooldown > 0 && flashTimer === 0) flashCooldown--;
+
+  updateAbilityButtons();
+
+  particles.forEach(p => {
+    p.x += p.vx; p.y += p.vy;
+    p.vy += 0.05;
+    p.life -= 0.025;
+    p.size *= 0.97;
+  });
+  particles = particles.filter(p => p.life > 0);
+}
+
+// ==================== DRAW ====================
+
+function drawEmoji(emoji, x, y, size) {
+  ctx.font = `${size}px serif`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(emoji, x, y);
+}
+
+function drawTree(x, y) {
+  ctx.fillStyle = '#3d2b1a';
+  ctx.fillRect(x+14, y+22, 12, 18);
+  ctx.fillStyle = '#1a3d1a';
+  ctx.beginPath(); ctx.moveTo(x+20,y); ctx.lineTo(x+38,y+28); ctx.lineTo(x+2,y+28); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#1d4a1d';
+  ctx.beginPath(); ctx.moveTo(x+20,y+8); ctx.lineTo(x+40,y+36); ctx.lineTo(x+0,y+36); ctx.closePath(); ctx.fill();
+}
+
+function drawGround() {
+  const startX = Math.floor(camera.x / TILE) * TILE;
+  const startY = Math.floor(camera.y / TILE) * TILE;
+  for (let gx = startX; gx < camera.x + W + TILE; gx += TILE) {
+    for (let gy = startY; gy < camera.y + H + TILE; gy += TILE) {
+      ctx.fillStyle = ((gx/TILE + gy/TILE) % 2 === 0) ? '#0f1a0f' : '#0d180d';
+      ctx.fillRect(gx - camera.x, gy - camera.y, TILE, TILE);
+    }
+  }
+  const rng2 = seededRand(99);
+  for (let i = 0; i < 400; i++) {
+    const gx = rng2() * WORLD_W, gy = rng2() * WORLD_H;
+    const sx = gx - camera.x, sy = gy - camera.y;
+    if (sx < -10 || sx > W+10 || sy < -10 || sy > H+10) continue;
+    ctx.fillStyle = '#1a2e1a';
+    ctx.fillRect(sx, sy, 3, 6);
+    ctx.fillRect(sx+4, sy+2, 3, 5);
+  }
+}
+
+function drawTorchPickup() {
+  if (!torchPickup || torchPickup.collected) return;
+  const sx = torchPickup.x - camera.x, sy = torchPickup.y - camera.y;
+  if (sx < -40 || sx > W+40 || sy < -40 || sy > H+40) return;
+  const pulse = 0.85 + Math.sin(torchPickup.glow) * 0.15;
+  ctx.save();
+  ctx.shadowColor = '#ffe080';
+  ctx.shadowBlur  = 24 * pulse;
+  ctx.font = `${22 * pulse}px serif`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('🔦', sx, sy);
+  ctx.restore();
+}
+
+function drawArtifact(a) {
+  const sx = a.x - camera.x, sy = a.y - camera.y;
+  if (sx < -40 || sx > W+40 || sy < -40 || sy > H+40) return;
+  if (a.collected) return;
+  const pulse = 0.85 + Math.sin(a.glow) * 0.15;
+  ctx.save();
+  ctx.shadowColor = '#f5c842'; ctx.shadowBlur = 18 * pulse;
+  ctx.font = `${18 * pulse}px serif`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('✨', sx, sy);
+  ctx.restore();
+}
+
+function drawWizard() {
+  const sx = wizard.x - camera.x, sy = wizard.y - camera.y;
+  if (sx < -60 || sx > W+60 || sy < -60 || sy > H+60) return;
+  ctx.fillStyle = '#3a3540';
+  ctx.beginPath(); ctx.ellipse(sx, sy+24, 28, 16, 0, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#4a4558';
+  ctx.beginPath(); ctx.ellipse(sx, sy+22, 22, 12, 0, 0, Math.PI*2); ctx.fill();
+  drawEmoji('🧙‍♂️', sx, sy, 30);
+  ctx.save();
+  ctx.shadowColor='#a080ff'; ctx.shadowBlur=20;
+  ctx.strokeStyle='#a080ff44'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.arc(sx, sy, 36, 0, Math.PI*2); ctx.stroke();
+  ctx.restore();
+}
+
+function drawPlayer() {
+  const sx = player.x - camera.x, sy = player.y - camera.y;
+  const flicker = player.invTimer > 0 && Math.floor(player.invTimer/6) % 2 === 0;
+  if (flicker) return;
+  ctx.save();
+  if (ghostified) { ctx.globalAlpha=0.75; ctx.shadowColor='#88aaff'; ctx.shadowBlur=20; }
+  drawEmoji(CHAR_EMOJIS[player.char] || '🍄', sx, sy, 28);
+  ctx.restore();
+}
+
+function drawGhosts() {
+  ghosts.forEach(g => {
+    const sx = g.x - camera.x, sy = g.y - camera.y;
+    if (sx < -40 || sx > W+40 || sy < -40 || sy > H+40) return;
+    const style = GHOST_STYLES[(Number.isInteger(g.style) ? g.style : 0) % GHOST_STYLES.length];
+    const isSentry = style.id === 'sentry';
+    ctx.save();
+    ctx.globalAlpha = g.fleeing > 0
+      ? g.alpha * 0.35 * (0.7 + Math.sin(g.wobble) * 0.3)
+      : g.alpha * (0.7 + Math.sin(g.wobble) * 0.3);
+    ctx.shadowColor = g.fleeing > 0 ? '#ffffff' : (isSentry ? '#ffd98a' : '#aaddff');
+    ctx.shadowBlur  = g.fleeing > 0 ? 35 : (isSentry ? 22 : 15);
+
+    if (isSentry && g.fleeing <= 0) {
+      const ringPulse = 0.55 + Math.sin(g.wobble * 1.2) * 0.25;
+      ctx.strokeStyle = `rgba(255,220,150,${0.35 + ringPulse * 0.25})`;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(sx, sy, 17 + ringPulse * 3, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    drawEmoji('👻', sx, sy + Math.sin(g.wobble)*4, 26);
+    ctx.restore();
+  });
+}
+
+function drawParticles() {
+  particles.forEach(p => {
+    const sx = p.x - camera.x, sy = p.y - camera.y;
+    ctx.save();
+    ctx.globalAlpha = p.life;
+    ctx.fillStyle = p.color; ctx.shadowColor = p.color; ctx.shadowBlur = 8;
+    ctx.beginPath(); ctx.arc(sx, sy, p.size, 0, Math.PI*2); ctx.fill();
+    ctx.restore();
+  });
+}
+
+// Flash cone — drawn AFTER dark overlay so it punches through
+function drawFlashCone() {
+  if (!flashActive || flashTimer <= 0) return;
+  const px = player.x - camera.x, py = player.y - camera.y;
+  const aimAngle = Math.atan2(mouse.y - py, mouse.x - px);
+  const HALF_ARC = Math.PI / 12;
+  const radius   = 720;
+  const fade     = Math.min(1, flashTimer / 10);
+
+  // Punch a cone-shaped hole in the darkness
+  ctx.save();
+  ctx.globalCompositeOperation = 'destination-out';
+  const coneGrad = ctx.createRadialGradient(px, py, 0, px, py, radius);
+  coneGrad.addColorStop(0,    `rgba(255,255,255,${fade})`);
+  coneGrad.addColorStop(0.5,  `rgba(255,255,255,${fade * 0.7})`);
+  coneGrad.addColorStop(1,    'rgba(255,255,255,0)');
+  ctx.fillStyle = coneGrad;
+  ctx.beginPath();
+  ctx.moveTo(px, py);
+  ctx.arc(px, py, radius, aimAngle - HALF_ARC, aimAngle + HALF_ARC);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+
+  // Warm yellow-white tint on top
+  ctx.save();
+  const tintGrad = ctx.createRadialGradient(px, py, 0, px, py, radius * 0.85);
+  tintGrad.addColorStop(0, `rgba(255,248,180,${fade * 0.25})`);
+  tintGrad.addColorStop(1, 'rgba(255,248,180,0)');
+  ctx.fillStyle = tintGrad;
+  ctx.beginPath();
+  ctx.moveTo(px, py);
+  ctx.arc(px, py, radius, aimAngle - HALF_ARC, aimAngle + HALF_ARC);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawSensePath() {
+  if (senseTimer <= 0 || sensePath.length < 2) return;
+  const fadeAlpha = Math.min(1, senseTimer / 60);
+  ctx.save();
+  sensePath.forEach((pt, i) => {
+    if (i === 0) return;
+    const sx = pt.x - camera.x, sy = pt.y - camera.y;
+    if (sx < -30 || sx > W+30 || sy < -30 || sy > H+30) return;
+    const pulse = 0.5 + 0.5 * Math.sin(tick * 0.12 - pt.phase);
+    const size  = 3 + pulse * 3;
+    const alpha = fadeAlpha * (0.4 + pulse * 0.5) * (i / sensePath.length);
+    const grd = ctx.createRadialGradient(sx, sy, 0, sx, sy, size * 2.5);
+    grd.addColorStop(0, `rgba(245,200,66,${alpha})`);
+    grd.addColorStop(1, 'rgba(245,200,66,0)');
+    ctx.fillStyle = grd;
+    ctx.beginPath(); ctx.arc(sx, sy, size*2.5, 0, Math.PI*2); ctx.fill();
+    ctx.globalAlpha = alpha + 0.2;
+    ctx.fillStyle = '#fff8d0';
+    ctx.beginPath(); ctx.arc(sx, sy, size*0.6, 0, Math.PI*2); ctx.fill();
+  });
+  ctx.globalAlpha = 1;
+  ctx.restore();
+}
+
+// ---- Flashlight overlay (overall map brightness tuned slightly higher) ----
+function drawFlashlight() {
+  if (fullBrightMode) return;
+
+  const px = player.x - camera.x, py = player.y - camera.y;
+  const r  = player.flashRadius;
+  const mdx = mouse.x - px, mdy = mouse.y - py;
+  const mdist = Math.hypot(mdx, mdy) || 1;
+  const offset = Math.min(mdist, 50);
+  const cx = px + (mdx / mdist) * offset;
+  const cy = py + (mdy / mdist) * offset;
+
+  const BASE = (flashActive ? 0.22 : (ghostified ? 0.34 : 0.42)) * DARKNESS_MULT;
+  const senseBoost = senseTimer > 0 ? 25 : 0;
+  const ghostBoost = ghostified ? 70 : 0;
+  const effectiveR = r + senseBoost + ghostBoost;
+
+  const overlay = ctx.createRadialGradient(cx, cy, effectiveR*0.12, cx, cy, effectiveR*1.35);
+  overlay.addColorStop(0,   'rgba(0,0,0,0)');
+  overlay.addColorStop(0.58, `rgba(0,0,0,${BASE * 0.22})`);
+  overlay.addColorStop(1,   `rgba(0,0,0,${BASE})`);
+
+  ctx.save();
+  ctx.fillStyle = `rgba(0,0,0,${BASE})`;
+  ctx.fillRect(0, 0, W, H);
+  ctx.globalCompositeOperation = 'destination-out';
+  ctx.fillStyle = overlay;
+  ctx.beginPath(); ctx.arc(cx, cy, effectiveR, 0, Math.PI*2); ctx.fill();
+
+  // Strong local lift: keep the immediate player area much brighter.
+  const coreLift = ctx.createRadialGradient(cx, cy, 0, cx, cy, effectiveR * 0.5);
+  coreLift.addColorStop(0, 'rgba(255,255,255,0.95)');
+  coreLift.addColorStop(0.5, 'rgba(255,255,255,0.45)');
+  coreLift.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = coreLift;
+  ctx.beginPath(); ctx.arc(cx, cy, effectiveR * 0.52, 0, Math.PI*2); ctx.fill();
+  ctx.restore();
+
+  const tint = ghostified
+    ? 'rgba(165,205,255,0.20)'
+    : (senseTimer > 0 ? 'rgba(245,180,50,0.14)' : 'rgba(245,200,66,0.13)');
+  ctx.save();
+  const warmGlow = ctx.createRadialGradient(cx, cy, 0, cx, cy, effectiveR*0.6);
+  warmGlow.addColorStop(0, tint);
+  warmGlow.addColorStop(1, 'rgba(245,200,66,0)');
+  ctx.fillStyle = warmGlow;
+  ctx.beginPath(); ctx.arc(cx, cy, effectiveR, 0, Math.PI*2); ctx.fill();
+  ctx.restore();
+}
+
+function drawCompassArrow(cx, cy, angle, color) {
+  ctx.save();
+  ctx.globalAlpha  = 0.6;
+  ctx.strokeStyle  = color; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.arc(cx, cy, 14, 0, Math.PI*2); ctx.stroke();
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.moveTo(cx + Math.cos(angle)*14,    cy + Math.sin(angle)*14);
+  ctx.lineTo(cx + Math.cos(angle+2.4)*6, cy + Math.sin(angle+2.4)*6);
+  ctx.lineTo(cx + Math.cos(angle-2.4)*6, cy + Math.sin(angle-2.4)*6);
+  ctx.closePath(); ctx.fill();
+  ctx.globalAlpha = 1;
+  ctx.restore();
+}
+
+function drawHUD() {
+  // Hearts
+  ctx.font = '18px serif'; ctx.textBaseline = 'middle';
+  for (let i = 0; i < 3; i++) {
+    ctx.globalAlpha = i < player.hp ? 1 : 0.2;
+    ctx.fillText('❤️', 10 + i*24, H - 20);
+  }
+  ctx.globalAlpha = 1;
+
+  // Torch charge icons
+  if (torchPickup?.collected) {
+    ctx.font = '16px serif'; ctx.textBaseline = 'middle';
+    for (let i = 0; i < 3; i++) {
+      ctx.globalAlpha = i < torchCharges ? 1 : 0.15;
+      ctx.fillText('🔦', 90 + i*22, H - 20);
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  // Sense cooldown arc (positioned to not overlap charges)
+  if (gameState === 'playing') {
+    const arcX = torchPickup?.collected ? 162 : 90, arcY = H - 20;
+    if (senseCooldown > 0 && senseTimer === 0) {
+      const frac = 1 - senseCooldown / SENSE_COOLDOWN;
+      ctx.save();
+      ctx.strokeStyle = '#3a3020'; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.arc(arcX, arcY, 10, -Math.PI/2, -Math.PI/2+Math.PI*2); ctx.stroke();
+      ctx.strokeStyle = '#c8a860';
+      ctx.beginPath(); ctx.arc(arcX, arcY, 10, -Math.PI/2, -Math.PI/2+Math.PI*2*frac); ctx.stroke();
+      ctx.restore();
+    } else if (senseTimer > 0) {
+      const frac = senseTimer / SENSE_DURATION;
+      ctx.save();
+      ctx.strokeStyle = '#f5c84266'; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.arc(arcX, arcY, 10, -Math.PI/2, -Math.PI/2+Math.PI*2*frac); ctx.stroke();
+      ctx.restore();
+    }
+  }
+
+  // Dialog (H-95 so it clears the hearts row)
+  if (dialogMsg && dialogTimer > 0) {
+    const alpha = Math.min(1, dialogTimer / 20);
+    ctx.save();
+    ctx.globalAlpha  = alpha;
+    ctx.fillStyle    = 'rgba(10,8,5,0.90)';
+    ctx.strokeStyle  = '#f5c84288'; ctx.lineWidth = 1;
+    const bw=500, bh=52, bx=(W-bw)/2, by=H-95;
+    ctx.beginPath(); ctx.roundRect(bx, by, bw, bh, 6); ctx.fill(); ctx.stroke();
+    ctx.fillStyle    = '#e8d5a3';
+    ctx.font         = "15px 'IM Fell English', serif";
+    ctx.textAlign    = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(dialogMsg, W/2, by + bh/2);
+    ctx.restore();
+  }
+
+  // Wizard compass (purple)
+  const wdx = wizard.x - player.x, wdy = wizard.y - player.y;
+  if (Math.hypot(wdx, wdy) > 200)
+    drawCompassArrow(W-30, 30, Math.atan2(wdy, wdx), '#a080ff');
+
+  // Torch compass (amber) — shown until pickup collected
+  if (torchPickup && !torchPickup.collected) {
+    const tdx = torchPickup.x - player.x, tdy = torchPickup.y - player.y;
+    if (Math.hypot(tdx, tdy) > 100)
+      drawCompassArrow(W-30, 58, Math.atan2(tdy, tdx), '#ffe080');
+  }
+}
+
+function drawChapter2Village() {
+  drawGround();
+  drawTrees();
+
+  chapter2Houses.forEach(h => {
+    const hx = h.x - camera.x;
+    const hy = h.y - camera.y;
+    if (hx < -120 || hx > W + 120 || hy < -120 || hy > H + 120) return;
+    ctx.fillStyle = '#3c2f22';
+    ctx.fillRect(hx, hy, h.w, h.h);
+    ctx.fillStyle = '#5a4330';
+    ctx.beginPath();
+    ctx.moveTo(hx - 6, hy);
+    ctx.lineTo(hx + h.w / 2, hy - 30);
+    ctx.lineTo(hx + h.w + 6, hy);
+    ctx.closePath();
+    ctx.fill();
+  });
+
+  chapter2Villagers.forEach(v => {
+    const sx = v.x - camera.x;
+    const sy = v.y - camera.y;
+    if (sx < -40 || sx > W + 40 || sy < -40 || sy > H + 40) return;
+    ctx.save();
+    ctx.globalAlpha = 0.9;
+    drawEmoji(v.emoji, sx, sy, 22);
+    ctx.restore();
+  });
+
+  if (chapter2Target) {
+    const tx = chapter2Target.x - camera.x;
+    const ty = chapter2Target.y - camera.y;
+    ctx.save();
+    ctx.strokeStyle = '#88aaff88';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.arc(tx, ty, 16 + Math.sin(tick * 0.08) * 2, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  drawPlayer();
+  drawFlashlight();
+  drawChapter2ForestHUD();
+}
+
+function drawChapter2Runner() {
+  if (!chapter2Runner) return;
+  const sx = chapter2Runner.x - camera.x;
+  const sy = chapter2Runner.y - camera.y;
+  if (sx < -40 || sx > W + 40 || sy < -40 || sy > H + 40) return;
+  ctx.save();
+  ctx.shadowColor = '#ffd18a';
+  ctx.shadowBlur = 12;
+  drawEmoji(chapter2Runner.emoji || '🧑', sx, sy, 24);
+  ctx.restore();
+}
+
+function drawChapter2ForestHUD() {
+  if (dialogMsg && dialogTimer > 0) {
+    const alpha = Math.min(1, dialogTimer / 20);
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = 'rgba(10,8,5,0.90)';
+    ctx.strokeStyle = '#88aaff88';
+    ctx.lineWidth = 1;
+    const bw = 500, bh = 52, bx = (W - bw) / 2, by = H - 95;
+    ctx.beginPath();
+    ctx.roundRect(bx, by, bw, bh, 6);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = '#e2e7ff';
+    ctx.font = "15px 'IM Fell English', serif";
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(dialogMsg, W / 2, by + bh / 2);
+    ctx.restore();
+  }
+}
+
+function drawTrees() {
+  trees.forEach(t => {
+    const sx = t.x - camera.x, sy = t.y - camera.y;
+    if (sx < -TILE || sx > W+TILE || sy < -TILE || sy > H+TILE) return;
+    drawTree(sx, sy);
+  });
+}
+
+function draw() {
+  if (gameState === 'chapter2-village') {
+    ctx.clearRect(0, 0, W, H);
+    drawChapter2Village();
+    return;
+  }
+
+  if (gameState === 'chapter2-forest') {
+    ctx.clearRect(0, 0, W, H);
+    drawGround();
+    drawTrees();
+    artifacts.forEach(drawArtifact);
+    drawChapter2Runner();
+    drawParticles();
+    drawPlayer();
+    drawFlashlight();
+    drawChapter2ForestHUD();
+    return;
+  }
+
+  ctx.clearRect(0, 0, W, H);
+  drawGround();
+  drawTrees();
+  drawTorchPickup();
+  artifacts.forEach(drawArtifact);
+  drawWizard();
+  drawGhosts();
+  drawParticles();
+  drawSensePath();
+  drawPlayer();
+  drawFlashlight();   // dark overlay
+  drawFlashCone();    // cone punches through overlay
+  drawHUD();
+}
+
+// ---- End screens ----
+function showEndScreen(win) {
+  senseBtn.style.display = 'none';
+  flashBtn.style.display = 'none';
+  brightBtn.style.display = 'none';
+  const screen = document.getElementById('game-over-screen');
+  const title  = document.getElementById('end-title');
+  const msg    = document.getElementById('end-msg');
+  if (win) {
+    title.textContent = 'YOU HAVE BECOME A GHOST!';
+    title.style.color = '#88aaff';
+    msg.innerHTML = `You gathered all five artifacts and made your offering to the Wizard.<br>
+    Now you drift among the ancient oaks as a spirit of the wood.<br><br>
+    <em style="color:#7a6a9a">The forest remembers you.</em>`;
+  } else {
+    title.textContent = 'THE FOREST CLAIMS YOU';
+    title.style.color = '#ff6644';
+    msg.innerHTML = `The ghosts found you before you could finish your search.<br>
+    Perhaps another wanderer will succeed where you could not.<br><br>
+    <em style="color:#7a4a3a">The artifacts remain hidden in the dark.</em>`;
+  }
+  screen.style.display = 'flex';
+}
+
+// ---- Game loop ----
+let lastTime = 0;
+function loop(ts) {
+  const dt = ts - lastTime; lastTime = ts;
+  if (gameState !== 'title' && gameState !== 'lose' && gameState !== 'win' &&
+      gameState !== 'chapter2-win' && gameState !== 'chapter2-lose') {
+    update();
+    draw();
+  }
+  requestAnimationFrame(loop);
+}
+
+// ---- UI wiring ----
+document.getElementById('start-btn').addEventListener('click', () => {
+  document.getElementById('title-screen').style.display = 'none';
+  hudTitle.textContent = 'LUMINARY FOREST';
+  initWorld();
+  gameState = 'playing';
+  senseBtn.style.display = 'block';
+  flashBtn.style.display = 'block';
+  updateBrightnessButton();
+});
+document.getElementById('chapter2-btn').addEventListener('click', () => {
+  jumpToChapter2();
+});
+document.getElementById('restart-btn').addEventListener('click', () => {
+  document.getElementById('game-over-screen').style.display = 'none';
+  pickRandomChar();
+  hudTitle.textContent = 'LUMINARY FOREST';
+  initWorld();
+  gameState = 'playing';
+  senseBtn.style.display = 'block';
+  flashBtn.style.display = 'block';
+  updateBrightnessButton();
+});
+
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
